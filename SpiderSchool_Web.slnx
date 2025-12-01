@@ -1,0 +1,6 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Emscripten" />
+  </Configurations>
+  <Project Path="SpiderSchool_Web/SpiderSchool_Web.vcxproj" Id="389d5eae-1dfa-4eef-a159-a8661b845e5e" />
+</Solution>
