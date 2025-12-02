@@ -13,7 +13,7 @@ struct GameResultInfo {
 
 class Game
 {
-	static constexpr bool BUILDABLE = true;
+	static constexpr bool BUILDABLE = false;
 	bool firstUpdate = false;
 
 	Camera2D camera{ Scene::CenterF(),1,CameraControl::None_ };
