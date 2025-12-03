@@ -26,8 +26,8 @@ struct StageMap
 
 	Array<std::shared_ptr<Vec2>> responPoss;
 
-	Array<std::pair<Vec2, uint8>> textureObjects;
-	Array<std::pair<Vec2, uint8>> textureObjectsBack;
+	Array<std::pair<Vec2, uint64>> textureObjects;
+	Array<std::pair<Vec2, uint64>> textureObjectsBack;
 
 	Vec2 brotherPos{ 300,500 };
 

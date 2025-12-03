@@ -74,9 +74,16 @@ public:
 			Console << Format(U"stageMaps[0].colGrid.size(): ", stageMaps[0].colGrid.size());
 			Console << Format(U"stageMaps[0].damageGrid.size(): ", stageMaps[0].damageGrid.size());
 			Console << Format(U"stageMaps[0].textureGrid.size(): ", stageMaps[0].textureGrid.size());
-			// Console << Format(U"stageMaps[0].textureGrid: ", stageMaps[0].textureGrid);
 			Console << Format(U"stageMaps[0].backtextureGrid.size(): ", stageMaps[0].backtextureGrid.size());
 			Console << Format(U"stageMaps[0].stageRectUnitGrid.size(): ", stageMaps[0].stageRectUnitGrid.size());
+			Console << Format(U"stageMaps[0].trampolineSpidersSave.size(): ", stageMaps[0].trampolineSpidersSave.size());
+			Console << Format(U"stageMaps[0].rideSpidersSave.size(): ", stageMaps[0].rideSpidersSave.size());
+			Console << Format(U"stageMaps[0].swingSpidersSave.size(): ", stageMaps[0].swingSpidersSave.size());
+			Console << Format(U"stageMaps[0].responPoss.size(): ", stageMaps[0].responPoss.size());
+			Console << Format(U"stageMaps[0].textureObjects.size(): ", stageMaps[0].textureObjects.size());
+			Console << Format(U"stageMaps[0].textureObjectsBack.size(): ", stageMaps[0].textureObjectsBack.size());
+			Console << Format(U"stageMaps[0].textureObjectsBack: ", stageMaps[0].textureObjectsBack);
+			Console << Format(U"stageMaps[0].brotherPos: ", stageMaps[0].brotherPos);
 
 		}
 		else {

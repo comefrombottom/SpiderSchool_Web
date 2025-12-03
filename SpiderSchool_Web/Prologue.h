@@ -8,7 +8,7 @@ class Prologue {
 	Array<Chat> chats;
 	size_t chatIndex = 0;
 
-	Font font{ 30 };
+	Font font{ 30, Resource(U"mplus-1p-regular_spiderschool.ttf") };
 
 	double timeAterChatEnd = 0;
 public:

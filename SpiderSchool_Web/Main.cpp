@@ -7,8 +7,7 @@
 void Main()
 {
 	Game game;
-	FontAsset::Register(U"24", 24);
-	FontAsset::Register(U"forEnding", FontMethod::MSDF, 40,Typeface::Black);
+	FontAsset::Register(U"forEnding", FontMethod::MSDF, 40, Resource(U"mplus-1p-black_spiderschool.ttf"));
 	TextureAsset::Register(U"sister", Resource(U"sister.png"));
 	TextureAsset::Register(U"brother", Resource(U"brother.png"));
 	TextureAsset::Register(U"TrampolineSpider", Resource(U"TrampolineSpiderx3.png"));
