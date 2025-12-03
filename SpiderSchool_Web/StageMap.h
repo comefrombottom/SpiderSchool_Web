@@ -3,15 +3,17 @@
 #include"TrampolineSpider.h"
 #include"RideSpider.h"
 #include"SwingSpider.h"
+
+
 struct StageMap
 {
 	Vec2 size;
-	static constexpr Vec2 oneCellSize{32, 32};
+	static constexpr Vec2 oneCellSize{ 32, 32 };
 	ColGrid colGrid;
 	ColGrid damageGrid;
-	Grid<uint64_t> textureGrid;
-	Grid<uint64_t> backtextureGrid;
-	static constexpr Vec2 oneRectUnitSize{800, 600};
+	Grid<uint8> textureGrid;
+	Grid<uint8> backtextureGrid;
+	static constexpr Vec2 oneRectUnitSize{ 800, 600 };
 	Grid<std::shared_ptr<RectF>> stageRectUnitGrid;
 
 	Array<std::shared_ptr<struct TrampolineSpider>> trampolineSpiders;
@@ -24,18 +26,18 @@ struct StageMap
 
 	Array<std::shared_ptr<Vec2>> responPoss;
 
-	Array<std::pair<Vec2, uint64_t>> textureObjects;
-	Array<std::pair<Vec2, uint64_t>> textureObjectsBack;
+	Array<std::pair<Vec2, uint8>> textureObjects;
+	Array<std::pair<Vec2, uint8>> textureObjectsBack;
 
-	Vec2 brotherPos{300,500};
+	Vec2 brotherPos{ 300,500 };
 
 	StageMap() = default;
-	StageMap(const Vec2& size):size(size) {
+	StageMap(const Vec2& size) :size(size) {
 		Size gridsize = Ceil(size / oneCellSize).asPoint();
 		colGrid = ColGrid({ 0,0 }, oneCellSize, gridsize);
-		damageGrid = ColGrid({ 0,0 }, oneCellSize,gridsize);
-		textureGrid = Grid<uint64_t>(gridsize);
-		backtextureGrid = Grid<uint64_t>(gridsize);
+		damageGrid = ColGrid({ 0,0 }, oneCellSize, gridsize);
+		textureGrid = Grid<uint8>(gridsize);
+		backtextureGrid = Grid<uint8>(gridsize);
 		stageRectUnitGrid = Grid<std::shared_ptr<RectF>>(Ceil(size / oneRectUnitSize).asPoint());
 	}
 	static Point getStageRectUnitIndex(const Vec2& pos) {
@@ -44,47 +46,6 @@ struct StageMap
 	static Vec2 RectUnitCenter(const Point& index) {
 		return index * oneRectUnitSize + oneRectUnitSize / 2;
 	}
-
-	//void addTrampolineSpider(const Vec2& pos) {
-	//	auto o= std::make_shared<TrampolineSpider>(pos);
-	//	trampolineSpiders << o;
-	//	Point index = Floor(pos / oneRectUnitSize).asPoint();
-	//	for (int32 i = -1; i <= 1; i++) {
-	//		for (int32 j = -1; j <= 1; j++) {
-	//			Point see = index + Point{i, j};
-	//			if (stageRectUnitGrid.inBounds(see)) {
-	//				//stageRectUnitGrid[see].trampolineSpidersWPtr << o;
-	//			}
-	//		}
-	//	}
-	//}
-	//void addRideSpider(const LineString& wire) {
-	//	const Vec2& pos = wire.front();
-	//	auto o = std::make_shared<RideSpider>(wire);
-	//	rideSpiders << o;
-	//	Point index = Floor(pos / oneRectUnitSize).asPoint();
-	//	for (int32 i = -1; i <= 1; i++) {
-	//		for (int32 j = -1; j <= 1; j++) {
-	//			Point see = index + Point{i, j};
-	//			if (stageRectUnitGrid.inBounds(see)) {
-	//				stageRectUnitGrid[see].rideSpidersWPtr << o;
-	//			}
-	//		}
-	//	}
-	//}
-	//void addSwingSpider(const Vec2& pos,const Vec2& wireFrom) {
-	//	auto o = std::make_shared<SwingSpider>(pos,wireFrom);
-	//	swingSpiders << o;
-	//	Point index = Floor(pos / oneRectUnitSize).asPoint();
-	//	for (int32 i = -1; i <= 1; i++) {
-	//		for (int32 j = -1; j <= 1; j++) {
-	//			Point see = index + Point{i, j};
-	//			if (stageRectUnitGrid.inBounds(see)) {
-	//				stageRectUnitGrid[see].swingSpidersWPtr << o;
-	//			}
-	//		}
-	//	}
-	//}
 
 	void reloadSpiders() {
 		trampolineSpiders.clear();
@@ -103,14 +64,14 @@ struct StageMap
 
 	void initStageUnitRectGrid() {
 		for (auto& p : step(stageRectUnitGrid.size())) {
-			stageRectUnitGrid[p] = std::make_shared<RectF>( p * oneRectUnitSize,oneRectUnitSize );
+			stageRectUnitGrid[p] = std::make_shared<RectF>(p * oneRectUnitSize, oneRectUnitSize);
 		}
 	}
 
 	template <class Archive>
 	void SIV3D_SERIALIZE(Archive& archive)
 	{
-		archive(size, colGrid,damageGrid, textureGrid, backtextureGrid, stageRectUnitGrid,trampolineSpidersSave,rideSpidersSave,swingSpidersSave,responPoss,textureObjects,textureObjectsBack,brotherPos);
+		archive(size, colGrid, damageGrid, textureGrid, backtextureGrid, stageRectUnitGrid, trampolineSpidersSave, rideSpidersSave, swingSpidersSave, responPoss, textureObjects, textureObjectsBack, brotherPos);
 	}
 };
 

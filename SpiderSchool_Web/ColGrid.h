@@ -1,25 +1,86 @@
 ﻿#pragma once
 
+class Bits {
+	uint8_t mData;
+public:
+	Bits() : mData(0) {}
+	Bits(uint8_t data) : mData(data) {}
+
+	class BitReference {
+		uint8_t& mByte;
+		uint8_t mMask;
+	public:
+		BitReference(uint8_t& byte, uint8_t mask) : mByte(byte), mMask(mask) {}
+
+		operator bool() const {
+			return (mByte & mMask) != 0;
+		}
+
+		BitReference& operator=(bool value) {
+			if (value) {
+				mByte |= mMask;
+			}
+			else {
+				mByte &= ~mMask;
+			}
+			return *this;
+		}
+
+		BitReference& operator=(const BitReference& other) {
+			return *this = static_cast<bool>(other);
+		}
+	};
+
+	BitReference operator[](size_t index) {
+		return BitReference(mData, 1 << index);
+	}
+
+	bool operator[](size_t index) const {
+		return (mData & (1 << index)) != 0;
+	}
+
+	void reset() {
+		mData = 0;
+	}
+
+	uint8_t data() const {
+		return mData;
+	}
+
+	bool operator==(const Bits& other) const {
+		return mData == other.mData;
+	}
+
+	bool operator!=(const Bits& other) const {
+		return mData != other.mData;
+	}
+
+	template <class Archive>
+	void SIV3D_SERIALIZE(Archive& archive) {
+		archive(mData);
+	}
+};
+
 //どんなに速い速度で来られても貫通しないcollider
 class ColGrid {
 	Vec2 mOffset;
 	Vec2 mOneGrid;
 	Size mGridSize;
 
-	Grid<std::array<bool, 5>> mGrid;//0:right,1:down,2:left,3:up,4:body
+	Grid<Bits> mGrid;//0:right,1:down,2:left,3:up,4:body
 public:
 	ColGrid() = default;
 	ColGrid(const Vec2& pos, const Vec2& one, const Size& size) {
 		mOffset = pos;
 		mOneGrid = one;
 		mGridSize = size;
-		mGrid = Grid<std::array<bool, 5>>{ size };
+		mGrid = Grid<Bits>{ size };
 	}
 
-	Grid<std::array<bool, 5>>& gridRef() noexcept {
+	Grid<Bits>& gridRef() noexcept {
 		return mGrid;
 	}
-	std::array<bool, 5>& operator[](const Size& index) {
+	Bits& operator[](const Size& index) {
 		return mGrid[index];
 	}
 	const Size& size() const noexcept {
@@ -111,7 +172,9 @@ public:
 		mGrid[index][4] = b;
 	}
 	void setFull(const Size& index, bool b = true) {
-		mGrid[index] = { b,b,b,b,b };
+		for (int i = 0; i < 5; i++) {
+			mGrid[index][i] = b;
+		}
 	}
 	void setBox(const Size& index) {
 		mGrid[index][4] = true;
@@ -145,7 +208,7 @@ public:
 		}
 	}
 	void eraseBox(const Size& index) {
-		mGrid[index] = { false,false,false,false,false };
+		mGrid[index] = 0;
 		Size rIndex = { index.x + 1,index.y };
 		if (hasBody(rIndex)) {
 			mGrid[rIndex][2] = true;
@@ -240,7 +303,7 @@ public:
 					continue;
 				}
 				if (mGrid[{j, i}][3]) {
-					colIndices << Size{j, i};
+					colIndices << Size{ j, i };
 				}
 			}
 			if (colIndices) {
@@ -256,7 +319,7 @@ public:
 						continue;
 					}
 					if (mGrid[{j, i}][3]) {
-						colIndices << Size{j, i};
+						colIndices << Size{ j, i };
 						return { { colIndices ,Vec2{x_begin,y_begin},true } };
 					}
 				}
@@ -274,7 +337,7 @@ public:
 						continue;
 					}
 					if (mGrid[{j, i}][3]) {
-						colIndices << Size{j, i};
+						colIndices << Size{ j, i };
 						return { { colIndices ,Vec2{x_begin,y_begin},true } };
 					}
 				}
@@ -314,7 +377,7 @@ public:
 					continue;
 				}
 				if (mGrid[{j, i}][1]) {
-					colIndices << Size{j, i};
+					colIndices << Size{ j, i };
 				}
 			}
 			if (colIndices) {
@@ -330,7 +393,7 @@ public:
 						continue;
 					}
 					if (mGrid[{j, i}][1]) {
-						colIndices << Size{j, i};
+						colIndices << Size{ j, i };
 						return { { colIndices ,Vec2{x_begin,y_begin},true } };
 					}
 				}
@@ -348,7 +411,7 @@ public:
 						continue;
 					}
 					if (mGrid[{j, i}][1]) {
-						colIndices << Size{j, i};
+						colIndices << Size{ j, i };
 						return { { colIndices ,Vec2{x_begin,y_begin},true } };
 					}
 				}
@@ -389,7 +452,7 @@ public:
 					continue;
 				}
 				if (mGrid[{i, j}][2]) {
-					colIndices << Size{i, j};
+					colIndices << Size{ i, j };
 				}
 			}
 			if (colIndices) {
@@ -405,7 +468,7 @@ public:
 						continue;
 					}
 					if (mGrid[{i, j}][2]) {
-						colIndices << Size{i, j};
+						colIndices << Size{ i, j };
 						return { { colIndices ,Vec2{y_begin,x_begin},true } };
 					}
 				}
@@ -423,7 +486,7 @@ public:
 						continue;
 					}
 					if (mGrid[{i, j}][2]) {
-						colIndices << Size{i, j};
+						colIndices << Size{ i, j };
 						return { { colIndices ,Vec2{y_begin,x_begin},true } };
 					}
 				}
@@ -463,7 +526,7 @@ public:
 					continue;
 				}
 				if (mGrid[{i, j}][0]) {
-					colIndices << Size{i, j};
+					colIndices << Size{ i, j };
 				}
 			}
 			if (colIndices) {
@@ -479,7 +542,7 @@ public:
 						continue;
 					}
 					if (mGrid[{i, j}][0]) {
-						colIndices << Size{i, j};
+						colIndices << Size{ i, j };
 						return { { colIndices ,Vec2{y_begin,x_begin},true } };
 					}
 				}
@@ -497,7 +560,7 @@ public:
 						continue;
 					}
 					if (mGrid[{i, j}][0]) {
-						colIndices << Size{i, j};
+						colIndices << Size{ i, j };
 						return { { colIndices ,Vec2{y_begin,x_begin},true } };
 					}
 				}

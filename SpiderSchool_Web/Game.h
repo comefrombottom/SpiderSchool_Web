@@ -60,11 +60,11 @@ public:
 		d8Input.setInputGroup(KeyD | KeyRight, KeyS | KeyDown, KeyA | KeyLeft, KeyW | KeyUp);
 		
 		if(true){
-			Deserializer<BinaryReader> reader{ Resource(U"stageMaps.bin") };
+			Deserializer<BinaryReader> reader{ Resource(U"stageMaps_new.bin") };
 
 			if (not reader) // もしオープンに失敗したら
 			{
-				throw Error{ U"Failed to open `stageMaps.bin`" };
+				throw Error{ U"Failed to open `stageMaps_new.bin`" };
 			}
 
 			reader(stageMaps);
@@ -134,7 +134,7 @@ public:
 
 		if constexpr(BUILDABLE) {
 			// バイナリファイルをオープン
-			Serializer<BinaryWriter> writer{ U"stageMaps.bin" };
+			Serializer<BinaryWriter> writer{ U"stageMaps_new.bin" };
 
 			if (writer) {
 				// シリアライズに対応したデータを記録
@@ -800,7 +800,7 @@ public:
 			auto& swingSpiders = stageMaps[stageMapIndex].swingSpiders;
 			auto list = colGrid.listUpIndicesOn(camera.getRegion());
 			Point renderTPosIndex = Floor(RectF{ Arg::center(camera.getCenter()),Scene::Size()*2}.pos / StageMap::oneCellSize).asPoint();
-			auto drawTexture = [&](const Grid<uint64>& grid) {
+			auto drawTexture = [&](const Grid<uint8>& grid) {
 				Transformer2D tf{ Mat3x2::Translate(-renderTPosIndex * Size(16,16)) };
 				for (auto& index : list) {
 					auto& page = grid[index];
