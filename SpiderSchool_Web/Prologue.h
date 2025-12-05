@@ -82,6 +82,6 @@ public:
 		}
 	}
 	bool sceneEnd() {
-		return timeAterChatEnd > 2.5 or KeySpace.down();
+		return timeAterChatEnd > 2.5 or KeySpace.down() or MouseL.down();
 	}
 };

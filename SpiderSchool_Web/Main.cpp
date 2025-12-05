@@ -4,10 +4,169 @@
 #include"Prologue.h"
 #include"Ending.h"
 
+struct TouchInfo {
+	int32 id;
+	Vec2 pos;
+};
 
+// タッチ情報を取得する関数
+Array<TouchInfo> GetMyTouches() {
+# if SIV3D_PLATFORM(WEB)
+	Array<TouchInfo> result = Array<TouchInfo>(EM_ASM_INT({ return window.myTouches.length; }));
+
+	EM_ASM({
+		const touches = window.myTouches;
+
+		for (let i = 0; i < touches.length; i++) {
+			const touch = touches[i];
+			const touchPtr = $0 + i * 24; // TouchInfo のサイズに応じて調整
+
+			const adjusted = siv3dAdjustPoint(touch.pageX, touch.pageY);
+
+			setValue(touchPtr, touch.identifier, 'i32');
+			setValue(touchPtr + 8, adjusted.x, 'double');
+			setValue(touchPtr + 16, adjusted.y, 'double');
+		}
+		}, result.data());
+
+	for (auto& touch : result)
+	{
+		touch.pos = Scene::ClientToScene(touch.pos);
+	}
+
+	return result;
+# else
+	return Array<TouchInfo>();
+# endif
+}
+
+class TouchesType
+{
+private:
+	Array<TouchInfo> m_touches;
+	Array<TouchInfo> m_preTouches;
+public:
+
+	void update()
+	{
+		m_preTouches = m_touches;
+		m_touches = GetMyTouches();
+	}
+
+	const Array<TouchInfo>& getTouches() const
+	{
+		return m_touches;
+	}
+
+	const Array<TouchInfo>& getPreTouches() const
+	{
+		return m_preTouches;
+	}
+
+	operator bool() const
+	{
+		return bool(m_touches);
+	}
+
+	Optional<TouchInfo> getTouch(int32 id) const
+	{
+		for (const auto& touch : m_touches)
+		{
+			if (touch.id == id)
+			{
+				return touch;
+			}
+		}
+		return none;
+	}
+
+	TouchInfo lastTouch() const
+	{
+		if (m_touches.isEmpty())
+		{
+			throw Error(U"lastTouch() called when no touches are available.");
+		}
+		else
+		{
+			return m_touches.back();
+		}
+	}
+
+	template<class T>
+	TouchesType intersects(T&& shape) const
+	{
+		TouchesType result;
+		for (const auto& touch : m_touches)
+		{
+			if (shape.intersects(touch.pos))
+			{
+				result.m_touches.push_back(touch);
+			}
+		}
+		return result;
+	}
+};
+
+TouchesType Touches;
+
+# if SIV3D_PLATFORM(WEB)
+EM_JS(void, setupMultiTouchHandler, (), {
+	// グローバル変数を定義
+	window.myTouches = [];
+
+// タッチイベントの処理を設定
+const canvas = Module['canvas'];
+
+function updateTouches(e) {
+  window.myTouches = Array.from(e.touches);
+  //e.preventDefault(); // 任意：スクロール防止など
+}
+
+canvas.addEventListener("touchstart", updateTouches, false);
+canvas.addEventListener("touchmove", updateTouches, false);
+canvas.addEventListener("touchend", updateTouches, false);
+	});
+
+
+# endif
 
 void Main()
 {
+
+
+
+# if SIV3D_PLATFORM(WEB)
+	setupMultiTouchHandler();
+
+	EM_ASM({
+		let keyDownEvent = null;
+		let timeoutId = null;
+
+		addEventListener("keydown", function(event) {
+			if (!event.isTrusted) {
+				return;
+			}
+			keyDownEvent = event;
+		});
+
+		addEventListener("keyup", function(event) {
+			if (!event.isTrusted) {
+				return;
+			}
+			const keyUpEvent = event;
+			if (keyDownEvent.timeStamp == keyUpEvent.timeStamp) {
+				clearTimeout(timeoutId);
+				dispatchEvent(keyDownEvent);
+				timeoutId = setTimeout(function() {
+					dispatchEvent(keyUpEvent);
+					timeoutId = null;
+				}, 100);
+			}
+		});
+	});
+# endif
+
+
 	Game game;
 	//FontAsset::Register(U"24", 24);
 	FontAsset::Register(U"forEnding", FontMethod::MSDF, 40, Resource(U"mplus-1p-black_spiderschool.ttf"));
@@ -55,6 +214,7 @@ void Main()
 	while (System::Update())
 	{
 		ClearPrint();
+		Touches.update();
 
 		switch (escene)
 		{
@@ -81,9 +241,9 @@ void Main()
 
 			RectF jumpButtonArea{ Scene::Width() - 300,Scene::Height() - 300,300,300 };
 
-			bool leftPressed = MouseL.pressed() && leftButtonArea.intersects(Cursor::PosF());
-			bool rightPressed = MouseL.pressed() && rightButtonArea.intersects(Cursor::PosF());
-			bool jumpPressed = MouseL.pressed() && jumpButtonArea.intersects(Cursor::PosF());
+			bool leftPressed = (MouseL.pressed() && leftButtonArea.intersects(Cursor::PosF())) or Touches.intersects(leftButtonArea);
+			bool rightPressed = (MouseL.pressed() && rightButtonArea.intersects(Cursor::PosF())) or Touches.intersects(rightButtonArea);
+			bool jumpPressed = (MouseL.pressed() && jumpButtonArea.intersects(Cursor::PosF())) or Touches.intersects(jumpButtonArea);
 
 			{
 				ScopedRenderTarget2D rt{ gameRenderTexture.clear(Palette::White)};

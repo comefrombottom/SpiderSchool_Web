@@ -6,7 +6,7 @@ class Title {
 	double timeAfterSpacePressed = 100;
 public:
 	void update(double delta=Scene::DeltaTime()) {
-		if (KeySpace.down() and not m_keySpacePressed) {
+		if ((KeySpace.down() or MouseL.down()) and not m_keySpacePressed) {
 			timeAfterSpacePressed = 0;
 			m_keySpacePressed = true;
 		}
