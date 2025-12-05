@@ -1,7 +1,7 @@
 ﻿#pragma once
 struct Brother {
-	Vec2 pos;
-	Vec2 size;
+	Vec2 pos{};
+	Vec2 size{};
 	double timer = 0;
 	Brother() = default;
 	Brother(const Vec2& bottomP) {

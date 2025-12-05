@@ -8,7 +8,7 @@ class Prologue {
 	Array<Chat> chats;
 	size_t chatIndex = 0;
 
-	Font font{ 30, Resource(U"mplus-1p-regular_spiderschool.ttf") };
+	Font font{ 30, Resource(U"mplus-1p-regular_spiderschool.ttf")};
 
 	double timeAterChatEnd = 0;
 public:
@@ -34,19 +34,26 @@ public:
 	void update(double delta=Scene::DeltaTime()) {
 		time += delta;
 		{
+			double scale = (Scene::Size() / Vec2{ 800,600 }).minComponent();
+			Vec2 tl = (Vec2{ Scene::Width(),Scene::Height() } - Vec2{ 800,600 } * scale) / 2;
+
+			Transformer2D tf{ Mat3x2::Scale(scale).translated(tl)};
+
+			constexpr Vec2 center = Vec2{ 400,300 };
+
 			ScopedRenderStates2D sampler{ SamplerState::ClampNearest };
 			if (time < 1)
 			{
-				TextureAsset(U"smartPhone").scaled(10).rotated(sin(time * 20) * exp(-time * 3) * 0.1).drawAt(Scene::CenterF() + Vec2{0, 300} *(1 - EaseOutCubic(time)));
+				TextureAsset(U"smartPhone").scaled(10).rotated(sin(time * 20) * exp(-time * 3) * 0.1).drawAt(center + Vec2{0, 300} *(1 - EaseOutCubic(time)));
 			}
 			else if (time < 2) {
-				TextureAsset(U"smartPhone").scaled(EaseOutQuad(time - 1) * 40 + 10).drawAt(Scene::CenterF());
+				TextureAsset(U"smartPhone").scaled(EaseOutQuad(time - 1) * 40 + 10).drawAt(center);
 			}
 			else if (time < 3) {
-				TextureAsset(U"smartPhone").scaled(50).drawAt(Scene::CenterF());
+				TextureAsset(U"smartPhone").scaled(50).drawAt(center);
 			}
 			else {
-				TextureAsset(U"smartPhone").scaled(50).drawAt(Scene::CenterF());
+				TextureAsset(U"smartPhone").scaled(50).drawAt(center);
 
 
 				chatIndex = Min<size_t>(size_t((time - 3) / 1.5), chats.size() - 1);
@@ -55,7 +62,7 @@ public:
 				if (chatIndex == chats.size() - 1)timeAterChatEnd += delta;
 				for (size_t i = 0; i <= chatIndex; i++) {
 					auto da = font(chats[i].string);
-					double chat_y = 500 - (chatIndex - i) * 100;
+					double chat_y = 500 - 100 - (chatIndex - i) * 100;
 					if (chats[i].isSister) {
 						RectF rect{ Arg::rightCenter(630,chat_y),da.region().size };
 						RoundRect{ RectF{Arg::center(rect.center()),rect.w + 40,rect.h + 10},20 }.draw(Palette::Darkblue);

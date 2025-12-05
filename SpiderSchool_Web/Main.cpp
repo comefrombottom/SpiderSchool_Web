@@ -4,9 +4,12 @@
 #include"Prologue.h"
 #include"Ending.h"
 
+
+
 void Main()
 {
 	Game game;
+	//FontAsset::Register(U"24", 24);
 	FontAsset::Register(U"forEnding", FontMethod::MSDF, 40, Resource(U"mplus-1p-black_spiderschool.ttf"));
 	TextureAsset::Register(U"sister", Resource(U"sister.png"));
 	TextureAsset::Register(U"brother", Resource(U"brother.png"));
@@ -21,6 +24,8 @@ void Main()
 	TextureAsset::Register(U"textureObjects", Resource(U"textureObjects.png"));
 	TextureAsset::Register(U"swingHoldPlace", Resource(U"swingHoldPlace.png"));
 
+
+	Window::SetStyle(WindowStyle::Sizable);
 
 	constexpr double stepSec = (1.0 / 200.0);
 
@@ -43,9 +48,14 @@ void Main()
 
 	Ending ending;
 
+	MSRenderTexture gameRenderTexture(Size(800, 600));
+
+	double timeAfterMousePressed = 100;
+
 	while (System::Update())
 	{
 		ClearPrint();
+
 		switch (escene)
 		{
 		case EScene::title: {
@@ -66,13 +76,42 @@ void Main()
 			break;
 		case EScene::game: {
 
-			game.setFirstUpdate(true);
-			for (accumulatorSec += Scene::DeltaTime(); stepSec <= accumulatorSec; accumulatorSec -= stepSec)
+			RectF leftButtonArea{ 0,Scene::Height() - 300,300,300 };
+			RectF rightButtonArea{ 300,Scene::Height() - 300,300,300 };
+
+			RectF jumpButtonArea{ Scene::Width() - 300,Scene::Height() - 300,300,300 };
+
+			bool leftPressed = MouseL.pressed() && leftButtonArea.intersects(Cursor::PosF());
+			bool rightPressed = MouseL.pressed() && rightButtonArea.intersects(Cursor::PosF());
+			bool jumpPressed = MouseL.pressed() && jumpButtonArea.intersects(Cursor::PosF());
+
 			{
-				game.update(stepSec);
-				game.setFirstUpdate(false);
+				ScopedRenderTarget2D rt{ gameRenderTexture.clear(Palette::White)};
+
+				game.setFirstUpdate(true);
+				for (accumulatorSec += Scene::DeltaTime(); stepSec <= accumulatorSec; accumulatorSec -= stepSec)
+				{
+					game.update(rightPressed, leftPressed, jumpPressed, stepSec);
+					game.setFirstUpdate(false);
+				}
+
+			
+
+				game.draw();
 			}
-			game.draw();
+			Graphics2D::Flush();
+
+			gameRenderTexture.resolve();
+
+			double scale = (Vec2(Scene::Size()) / gameRenderTexture.size()).minComponent();
+			gameRenderTexture.scaled(scale).draw(Arg::topCenter(Scene::Rect().topCenter().asPoint()));
+
+			if (timeAfterMousePressed < 5) {
+				leftButtonArea.drawFrame(2, leftPressed ? Palette::Red : Palette::White);
+				rightButtonArea.drawFrame(2, rightPressed ? Palette::Red : Palette::White);
+				jumpButtonArea.drawFrame(2, jumpPressed ? Palette::Red : Palette::White);
+			}
+			
 
 			if (auto result = game.getResult()) {
 				resultInfo = *result;
@@ -86,7 +125,8 @@ void Main()
 			break;
 		case EScene::ending: {
 			ending.update();
-			game.draw();
+			double scale = (Vec2(Scene::Size()) / gameRenderTexture.size()).minComponent();
+			gameRenderTexture.scaled(scale).draw(Arg::topCenter(Scene::Rect().topCenter().asPoint()));
 			ending.draw();
 		}
 			break;
@@ -94,6 +134,13 @@ void Main()
 			break;
 		}
 
+
+		if (MouseL.pressed()) {
+			timeAfterMousePressed = 0;
+		}
+		else {
+			timeAfterMousePressed += Scene::DeltaTime();
+		}
 		
 	}
 }

@@ -11,6 +11,42 @@ struct GameResultInfo {
 	int32 deadCount;
 };
 
+class InputFlag {
+public:
+	InputFlag() noexcept : m_prePressed(false), m_pressed(false), m_duration(0) {}
+
+	void update(bool currentPressed) noexcept {
+		m_prePressed = m_pressed;
+		m_pressed = currentPressed;
+
+		if (down()) {
+			m_stopwatch.restart();
+		}
+		m_duration = pressed() or up() ? m_stopwatch.elapsed() : 0s;
+	}
+
+	[[nodiscard]] constexpr bool down() const noexcept {
+		return m_pressed && !m_prePressed;
+	}
+
+	[[nodiscard]] constexpr bool pressed() const noexcept {
+		return m_pressed;
+	}
+
+	[[nodiscard]] constexpr bool up() const noexcept {
+		return !m_pressed && m_prePressed;
+	}
+
+	[[nodiscard]] constexpr Duration pressedDuration() const noexcept {
+		return m_duration;
+	}
+private:
+	bool m_prePressed;
+	bool m_pressed;
+	Stopwatch m_stopwatch;
+	Duration m_duration;
+};
+
 class Game
 {
 	static constexpr bool BUILDABLE = false;
@@ -19,7 +55,7 @@ class Game
 	Camera2D camera{ Scene::CenterF(),1,CameraControl::None_ };
 
 	Player player;
-	D8Input d8Input;
+	//D8Input d8Input;
 
 	Array<StageMap> stageMaps;
 	size_t stageMapIndex = 0;
@@ -32,12 +68,14 @@ class Game
 	TextEditState editText{ U"0" };
 
 	Array<Vec2> addposs;
-	bool addingPos;
+	bool addingPos = false;
 
 	size_t responIndex = 0;
 
-	RenderTexture renderTexture{ Scene::Size() ,Palette::White };
-	RenderTexture renderTextureBack{ Scene::Size() ,Palette::White };
+	static constexpr Size gameSceneSize{ 800, 600 };
+
+	RenderTexture renderTexture{ gameSceneSize ,Palette::White };
+	RenderTexture renderTextureBack{ gameSceneSize ,Palette::White };
 
 	double afterPrologueTime = 0;
 
@@ -55,9 +93,13 @@ class Game
 
 	bool howControlShow = true;
 	double howControlFade = 0;
+
+	InputFlag rightInput;
+	InputFlag leftInput;
+	InputFlag jumpInput;
 public:
 	Game() {
-		d8Input.setInputGroup(KeyD | KeyRight, KeyS | KeyDown, KeyA | KeyLeft, KeyW | KeyUp);
+		// d8Input.setInputGroup(KeyD | KeyRight, KeyS | KeyDown, KeyA | KeyLeft, KeyW | KeyUp);
 		
 		if(true){
 			Deserializer<BinaryReader> reader{ Resource(U"stageMaps_new.bin") };
@@ -68,23 +110,6 @@ public:
 			}
 
 			reader(stageMaps);
-
-			Console << U"stageMaps loaded";
-			Console << Format(U"stageMaps[0].size: ", stageMaps[0].size);
-			Console << Format(U"stageMaps[0].colGrid.size(): ", stageMaps[0].colGrid.size());
-			Console << Format(U"stageMaps[0].damageGrid.size(): ", stageMaps[0].damageGrid.size());
-			Console << Format(U"stageMaps[0].textureGrid.size(): ", stageMaps[0].textureGrid.size());
-			Console << Format(U"stageMaps[0].backtextureGrid.size(): ", stageMaps[0].backtextureGrid.size());
-			Console << Format(U"stageMaps[0].stageRectUnitGrid.size(): ", stageMaps[0].stageRectUnitGrid.size());
-			Console << Format(U"stageMaps[0].trampolineSpidersSave.size(): ", stageMaps[0].trampolineSpidersSave.size());
-			Console << Format(U"stageMaps[0].rideSpidersSave.size(): ", stageMaps[0].rideSpidersSave.size());
-			Console << Format(U"stageMaps[0].swingSpidersSave.size(): ", stageMaps[0].swingSpidersSave.size());
-			Console << Format(U"stageMaps[0].responPoss.size(): ", stageMaps[0].responPoss.size());
-			Console << Format(U"stageMaps[0].textureObjects.size(): ", stageMaps[0].textureObjects.size());
-			Console << Format(U"stageMaps[0].textureObjectsBack.size(): ", stageMaps[0].textureObjectsBack.size());
-			Console << Format(U"stageMaps[0].textureObjectsBack: ", stageMaps[0].textureObjectsBack);
-			Console << Format(U"stageMaps[0].brotherPos: ", stageMaps[0].brotherPos);
-
 		}
 		else {
 			stageMaps << StageMap({ 800 * 20, 600 * 20 });
@@ -152,7 +177,15 @@ public:
 
 
 	}
-	void update(double delta=Scene::DeltaTime()) {
+	void update(bool rightButtonPressed, bool leftButtonPressed, bool jumpButtonPressed, double delta=Scene::DeltaTime()) {
+		{
+			bool rightPressed = KeyD.pressed() or KeyRight.pressed() or rightButtonPressed;
+			bool leftPressed = KeyA.pressed() or KeyLeft.pressed() or leftButtonPressed;
+
+			rightInput.update(rightPressed and not leftPressed);
+			leftInput.update(leftPressed and not rightPressed);
+		}
+		jumpInput.update(KeySpace.pressed() or jumpButtonPressed);
 
 		stageRectUnitIndex = StageMap::getStageRectUnitIndex(player.center());
 
@@ -179,7 +212,7 @@ public:
 		if (buildMode) {
 			if(firstUpdate)Print << U"buildMode";
 		}
-		d8Input.update(delta);
+		// d8Input.update(delta);
 		
 		if (not buildMode) {
 			if (stageMap.stageRectUnitGrid.inBounds(stageRectUnitIndex) and stageMap.stageRectUnitGrid[stageRectUnitIndex]) {
@@ -199,6 +232,7 @@ public:
 		}
 		//if (not buildMode)camera.setTargetCenter({ player.pos.x,StageMap::RectUnitCenter(stageRectUnitIndex).y });
 		if(not buildMode or not KeySpace.pressed())camera.update(delta);
+
 		{
 			auto debugTf = camera.createTransformer();
 
@@ -206,7 +240,7 @@ public:
 				if (afterPrologueTime < 2) {
 					afterPrologueTime += delta;
 				}
-				if (firstUpdate and KeySpace.down()) {
+				if (jumpInput.down()) {
 					if (player.onGround) {
 						player.v.y -= 11 * 60;
 					}
@@ -226,7 +260,7 @@ public:
 				bool pushRunKey = false;
 				player.wallSlide = false;
 				if (not player.damaged) {
-					if (d8Input.rWide()) {
+					if (rightInput.pressed()) {
 						pushRunKey = true;
 						if (player.onGround) {
 							player.isRight = true;
@@ -255,7 +289,7 @@ public:
 							}
 						}
 					}
-					if (d8Input.lWide()) {
+					if (leftInput.pressed()) {
 
 						pushRunKey = true;
 						if (player.onGround) {
@@ -373,13 +407,13 @@ public:
 					//rideSpider intersects
 					if (auto spider = player.ridingSpider.lock()) {
 						player.v = (spider->pos - (player.center() + Vec2{player.ridingRight ? -20 : 20, 10})) / delta;
-						if (d8Input.rWide() && d8Input.timeZero()) {
+						if (rightInput.down()) {
 							player.ridingRight = true;
 						}
-						if (d8Input.lWide() && d8Input.timeZero()) {
+						if (leftInput.down()) {
 							player.ridingRight = false;
 						}
-						if (firstUpdate and KeySpace.down()) {
+						if (jumpInput.down()) {
 							spider->grabbed = false;
 
 							double speed = spider->speed * 0.8;
@@ -415,13 +449,13 @@ public:
 					//swingSpider intersects
 					if (auto spider = player.swingingSpider.lock()) {
 						player.v = (spider->pos - (player.center() + Vec2{player.ridingRight ? -20 : 20, 10})) / delta;
-						if (d8Input.rWide() && d8Input.timeZero()) {
+						if (rightInput.down()) {
 							player.ridingRight = true;
 						}
-						if (d8Input.lWide() && d8Input.timeZero()) {
+						if (leftInput.down()) {
 							player.ridingRight = false;
 						}
-						if (firstUpdate and KeySpace.down()) {
+						if (jumpInput.down()) {
 							spider->grabbed = false;
 
 							player.v = (spider->pos - spider->prePos) / delta;
@@ -806,7 +840,7 @@ public:
 			auto& rideSpiders = stageMaps[stageMapIndex].rideSpiders;
 			auto& swingSpiders = stageMaps[stageMapIndex].swingSpiders;
 			auto list = colGrid.listUpIndicesOn(camera.getRegion());
-			Point renderTPosIndex = Floor(RectF{ Arg::center(camera.getCenter()),Scene::Size()*2}.pos / StageMap::oneCellSize).asPoint();
+			Point renderTPosIndex = Floor(RectF{ Arg::center(camera.getCenter()),gameSceneSize *2}.pos / StageMap::oneCellSize).asPoint();
 			auto drawTexture = [&](const Grid<uint8>& grid) {
 				Transformer2D tf{ Mat3x2::Translate(-renderTPosIndex * Size(16,16)) };
 				for (auto& index : list) {
