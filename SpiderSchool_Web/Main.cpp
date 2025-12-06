@@ -53,6 +53,17 @@ public:
 		m_touches = GetMyTouches();
 	}
 
+	// マウスをタッチとして扱う（デスクトップ向け）
+	void updateMouseAsTouch()
+	{
+		if (m_touches) return;
+
+		if (MouseL.pressed())
+		{
+			m_touches.push_back(TouchInfo{ 0, Cursor::PosF() });
+		}
+	}
+
 	const Array<TouchInfo>& getTouches() const
 	{
 		return m_touches;
@@ -80,16 +91,58 @@ public:
 		return none;
 	}
 
-	TouchInfo lastTouch() const
+	TouchInfo front() const
 	{
-		if (m_touches.isEmpty())
+		return m_touches.front();
+	}
+
+	TouchInfo back() const
+	{
+		return m_touches.back();
+	}
+
+	TouchesType downs() const 
+	{
+		TouchesType result;
+		for (const auto& touch : m_touches)
 		{
-			throw Error(U"lastTouch() called when no touches are available.");
+			bool found = false;
+			for (const auto& preTouch : m_preTouches)
+			{
+				if (touch.id == preTouch.id)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				result.m_touches.push_back(touch);
+			}
 		}
-		else
+		return result;
+	}
+
+	TouchesType ups() const
+	{
+		TouchesType result;
+		for (const auto& preTouch : m_preTouches)
 		{
-			return m_touches.back();
+			bool found = false;
+			for (const auto& touch : m_touches)
+			{
+				if (preTouch.id == touch.id)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				result.m_touches.push_back(preTouch);
+			}
 		}
+		return result;
 	}
 
 	template<class T>
@@ -104,6 +157,36 @@ public:
 			}
 		}
 		return result;
+	}
+
+	Vec2 deltaPos(int32 id) const
+	{
+		Optional<TouchInfo> currentTouch;
+		Optional<TouchInfo> previousTouch;
+		for (const auto& touch : m_touches)
+		{
+			if (touch.id == id)
+			{
+				currentTouch = touch;
+				break;
+			}
+		}
+		for (const auto& preTouch : m_preTouches)
+		{
+			if (preTouch.id == id)
+			{
+				previousTouch = preTouch;
+				break;
+			}
+		}
+		if (currentTouch && previousTouch)
+		{
+			return currentTouch->pos - previousTouch->pos;
+		}
+		else
+		{
+			return Vec2{ 0,0 };
+		}
 	}
 };
 
@@ -211,10 +294,15 @@ void Main()
 
 	double timeAfterMousePressed = 100;
 
+	Optional<int32> LRControlTouchID;
+	double LRControlValue = 0;
+	constexpr double LRControlLimit = 50;
+
 	while (System::Update())
 	{
 		ClearPrint();
 		Touches.update();
+		Touches.updateMouseAsTouch();
 
 		switch (escene)
 		{
@@ -236,14 +324,28 @@ void Main()
 			break;
 		case EScene::game: {
 
-			RectF leftButtonArea{ 0,Scene::Height() - 300,300,300 };
-			RectF rightButtonArea{ 300,Scene::Height() - 300,300,300 };
+			RectF sceneLeftArea{ 0, 0, Scene::Width() / 2.0, Scene::Height() };
+			RectF sceneRightArea{ Scene::Width() / 2.0, 0, Scene::Width() / 2.0, Scene::Height() };
 
-			RectF jumpButtonArea{ Scene::Width() - 300,Scene::Height() - 300,300,300 };
+			if (not LRControlTouchID) {
+				if (auto touchesInLeft = Touches.downs().intersects(sceneLeftArea)) {
+					LRControlTouchID = touchesInLeft.front().id;
+				}
+			}
+			else {
+				if (auto touchOpt = Touches.getTouch(*LRControlTouchID)) {
+					LRControlValue += Touches.deltaPos(*LRControlTouchID).x;
+					LRControlValue = Clamp(LRControlValue, -LRControlLimit, LRControlLimit);
+				}
+				else {
+					LRControlTouchID.reset();
+					LRControlValue = 0;
+				}
+			}
 
-			bool leftPressed = (MouseL.pressed() && leftButtonArea.intersects(Cursor::PosF())) or Touches.intersects(leftButtonArea);
-			bool rightPressed = (MouseL.pressed() && rightButtonArea.intersects(Cursor::PosF())) or Touches.intersects(rightButtonArea);
-			bool jumpPressed = (MouseL.pressed() && jumpButtonArea.intersects(Cursor::PosF())) or Touches.intersects(jumpButtonArea);
+			bool rightPressed = (LRControlValue > 10);
+			bool leftPressed = (LRControlValue < -10);
+			bool jumpPressed = (Touches.downs().intersects(sceneRightArea));
 
 			{
 				ScopedRenderTarget2D rt{ gameRenderTexture.clear(Palette::White)};
@@ -267,9 +369,10 @@ void Main()
 			gameRenderTexture.scaled(scale).draw(Arg::topCenter(Scene::Rect().topCenter().asPoint()));
 
 			if (timeAfterMousePressed < 5) {
+				/*
 				leftButtonArea.drawFrame(2, leftPressed ? Palette::Red : Palette::White);
 				rightButtonArea.drawFrame(2, rightPressed ? Palette::Red : Palette::White);
-				jumpButtonArea.drawFrame(2, jumpPressed ? Palette::Red : Palette::White);
+				jumpButtonArea.drawFrame(2, jumpPressed ? Palette::Red : Palette::White);*/
 			}
 			
 
