@@ -58,9 +58,16 @@ public:
 	{
 		if (m_touches) return;
 
-		if (MouseL.pressed())
+		if (MouseL.down())
 		{
 			m_touches.push_back(TouchInfo{ 0, Cursor::PosF() });
+		}
+		else if (MouseL.pressed())
+		{
+			if (m_preTouches.contains_if([](const TouchInfo& t) { return t.id == 0; }))
+			{
+				m_touches.push_back(TouchInfo{ 0, Cursor::PosF() });
+			}
 		}
 	}
 
@@ -296,7 +303,9 @@ void Main()
 
 	Optional<int32> LRControlTouchID;
 	double LRControlValue = 0;
-	constexpr double LRControlLimit = 50;
+	constexpr double LRControlLimit = 100;
+	double delayX = 0;
+
 
 	while (System::Update())
 	{
@@ -327,15 +336,32 @@ void Main()
 			RectF sceneLeftArea{ 0, 0, Scene::Width() / 2.0, Scene::Height() };
 			RectF sceneRightArea{ Scene::Width() / 2.0, 0, Scene::Width() / 2.0, Scene::Height() };
 
+			bool rightSwiped = false;
+			bool leftSwiped = false;
+
 			if (not LRControlTouchID) {
 				if (auto touchesInLeft = Touches.downs().intersects(sceneLeftArea)) {
 					LRControlTouchID = touchesInLeft.front().id;
+					delayX = touchesInLeft.front().pos.x;
 				}
 			}
 			else {
 				if (auto touchOpt = Touches.getTouch(*LRControlTouchID)) {
 					LRControlValue += Touches.deltaPos(*LRControlTouchID).x;
 					LRControlValue = Clamp(LRControlValue, -LRControlLimit, LRControlLimit);
+
+					double x = touchOpt->pos.x;
+					delayX += (x - delayX) * 10 * Scene::DeltaTime();
+
+					Print << x - delayX;
+
+					if (x - delayX > 50) {
+						rightSwiped = true;
+					}
+					else if (x - delayX < -50) {
+						leftSwiped = true;
+					}
+
 				}
 				else {
 					LRControlTouchID.reset();
@@ -343,8 +369,9 @@ void Main()
 				}
 			}
 
-			bool rightPressed = (LRControlValue > 10);
-			bool leftPressed = (LRControlValue < -10);
+
+			bool rightPressed = (LRControlValue > 20);
+			bool leftPressed = (LRControlValue < -20);
 			bool jumpPressed = (Touches.downs().intersects(sceneRightArea));
 
 			{
@@ -353,7 +380,7 @@ void Main()
 				game.setFirstUpdate(true);
 				for (accumulatorSec += Scene::DeltaTime(); stepSec <= accumulatorSec; accumulatorSec -= stepSec)
 				{
-					game.update(rightPressed, leftPressed, jumpPressed, stepSec);
+					game.update(rightPressed, leftPressed, jumpPressed, rightSwiped, leftSwiped, stepSec);
 					game.setFirstUpdate(false);
 				}
 

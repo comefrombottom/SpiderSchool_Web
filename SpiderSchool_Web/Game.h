@@ -49,7 +49,7 @@ private:
 
 class Game
 {
-	static constexpr bool BUILDABLE = false;
+	static constexpr bool BUILDABLE = true;
 	bool firstUpdate = false;
 
 	Camera2D camera{ Scene::CenterF(),1,CameraControl::None_ };
@@ -97,6 +97,8 @@ class Game
 	InputFlag rightInput;
 	InputFlag leftInput;
 	InputFlag jumpInput;
+	InputFlag rightSwipeInput;
+	InputFlag leftSwipeInput;
 public:
 	Game() {
 		// d8Input.setInputGroup(KeyD | KeyRight, KeyS | KeyDown, KeyA | KeyLeft, KeyW | KeyUp);
@@ -177,7 +179,7 @@ public:
 
 
 	}
-	void update(bool rightButtonPressed, bool leftButtonPressed, bool jumpButtonPressed, double delta=Scene::DeltaTime()) {
+	void update(bool rightButtonPressed, bool leftButtonPressed, bool jumpButtonPressed, bool rightSwiped, bool leftSwiped, double delta=Scene::DeltaTime()) {
 		{
 			bool rightPressed = KeyD.pressed() or KeyRight.pressed() or rightButtonPressed;
 			bool leftPressed = KeyA.pressed() or KeyLeft.pressed() or leftButtonPressed;
@@ -186,6 +188,9 @@ public:
 			leftInput.update(leftPressed and not rightPressed);
 		}
 		jumpInput.update(KeySpace.pressed() or jumpButtonPressed);
+
+		rightSwipeInput.update(rightSwiped);
+		leftSwipeInput.update(leftSwiped);
 
 		stageRectUnitIndex = StageMap::getStageRectUnitIndex(player.center());
 
@@ -407,10 +412,10 @@ public:
 					//rideSpider intersects
 					if (auto spider = player.ridingSpider.lock()) {
 						player.v = (spider->pos - (player.center() + Vec2{player.ridingRight ? -20 : 20, 10})) / delta;
-						if (rightInput.down()) {
+						if (rightInput.down() or rightSwipeInput.down()) {
 							player.ridingRight = true;
 						}
-						if (leftInput.down()) {
+						if (leftInput.down() or leftSwipeInput.down()) {
 							player.ridingRight = false;
 						}
 						if (jumpInput.down()) {
@@ -418,7 +423,7 @@ public:
 
 							double speed = spider->speed * 0.8;
 							if (spider->state == RideSpider::State::afterGo) {
-								if (spider->afterGoTime < 0.1) {
+								if (spider->afterGoTime < 0.2) {
 									speed = spider->speedSave * 0.8;
 								}
 							}
@@ -449,10 +454,10 @@ public:
 					//swingSpider intersects
 					if (auto spider = player.swingingSpider.lock()) {
 						player.v = (spider->pos - (player.center() + Vec2{player.ridingRight ? -20 : 20, 10})) / delta;
-						if (rightInput.down()) {
+						if (rightInput.down() or rightSwipeInput.down()) {
 							player.ridingRight = true;
 						}
-						if (leftInput.down()) {
+						if (leftInput.down() or leftSwipeInput.down()) {
 							player.ridingRight = false;
 						}
 						if (jumpInput.down()) {
