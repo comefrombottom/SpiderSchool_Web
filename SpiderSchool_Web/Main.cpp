@@ -353,8 +353,6 @@ void Main()
 					double x = touchOpt->pos.x;
 					delayX += (x - delayX) * 10 * Scene::DeltaTime();
 
-					Print << x - delayX;
-
 					if (x - delayX > 50) {
 						rightSwiped = true;
 					}
