@@ -311,7 +311,7 @@ void Main()
 	{
 		ClearPrint();
 		Touches.update();
-		Touches.updateMouseAsTouch();
+		// Touches.updateMouseAsTouch();
 
 		switch (escene)
 		{
