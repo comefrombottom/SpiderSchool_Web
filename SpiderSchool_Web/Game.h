@@ -49,7 +49,7 @@ private:
 
 class Game
 {
-	static constexpr bool BUILDABLE = true;
+	static constexpr bool BUILDABLE = false;
 	bool firstUpdate = false;
 
 	Camera2D camera{ Scene::CenterF(),1,CameraControl::None_ };
@@ -99,6 +99,8 @@ class Game
 	InputFlag jumpInput;
 	InputFlag rightSwipeInput;
 	InputFlag leftSwipeInput;
+
+	bool touchDevice = false;
 public:
 	Game() {
 		// d8Input.setInputGroup(KeyD | KeyRight, KeyS | KeyDown, KeyA | KeyLeft, KeyW | KeyUp);
@@ -943,7 +945,12 @@ public:
 			brother.draw();
 			//brother.rect().drawFrame();
 			if (howControlFade>0) {
-				FontAsset(U"forEnding")(U"AD or ←→to move\nSPACE to jump").draw(1000, 11000, ColorF(1, howControlFade));
+				if (touchDevice) {
+					FontAsset(U"forEnding")(U"画面左スライドで移動\n画面右タップでジャンプ").draw(1000, 11000, ColorF(1, howControlFade));
+				}
+				else {
+					FontAsset(U"forEnding")(U"AD or ←→to move\nSPACE to jump").draw(1000, 11000, ColorF(1, howControlFade));
+				}
 			}
 
 
@@ -1005,6 +1012,10 @@ public:
 	}
 	void setAfterPrologueTimeZero() {
 		afterPrologueTime = 0;
+	}
+
+	void setTouchDevice(bool b) {
+		touchDevice = b;
 	}
 
 	Optional<GameResultInfo> getResult() {

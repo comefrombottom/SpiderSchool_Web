@@ -306,12 +306,16 @@ void Main()
 	constexpr double LRControlLimit = 100;
 	double delayX = 0;
 
-
 	while (System::Update())
 	{
 		ClearPrint();
 		Touches.update();
 		// Touches.updateMouseAsTouch();
+
+		if (Touches)
+		{
+			game.setTouchDevice(true);
+		}
 
 		switch (escene)
 		{
@@ -324,7 +328,19 @@ void Main()
 		}
 			break;
 		case EScene::prologue: {
-			prologue.update();
+
+			{
+				ScopedRenderTarget2D rt{ gameRenderTexture.clear(Palette::Black) };
+				prologue.update();
+			}
+			Graphics2D::Flush();
+
+			gameRenderTexture.resolve();
+			double scale = (Vec2(Scene::Size()) / gameRenderTexture.size()).minComponent();
+
+			gameRenderTexture.scaled(scale).draw(Arg::topCenter(Scene::Rect().topCenter().asPoint()));
+
+
 			if (prologue.sceneEnd()) {
 				escene = EScene::game;
 			}
@@ -412,10 +428,22 @@ void Main()
 		case EScene::pause:
 			break;
 		case EScene::ending: {
+
+
 			ending.update();
 			double scale = (Vec2(Scene::Size()) / gameRenderTexture.size()).minComponent();
 			gameRenderTexture.scaled(scale).draw(Arg::topCenter(Scene::Rect().topCenter().asPoint()));
 			ending.draw();
+
+			if (ending.sceneEnd()) {
+				escene = EScene::title;
+				title = Title();
+				prologue = Prologue();
+				game = Game();
+				ending = Ending();
+
+			}
+
 		}
 			break;
 		default:

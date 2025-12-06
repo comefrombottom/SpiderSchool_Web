@@ -34,10 +34,10 @@ public:
 	void update(double delta=Scene::DeltaTime()) {
 		time += delta;
 		{
-			double scale = (Scene::Size() / Vec2{ 800,600 }).minComponent();
-			Vec2 tl = (Vec2{ Scene::Width(),Scene::Height() } - Vec2{ 800,600 } * scale) / 2;
+			//double scale = (Scene::Size() / Vec2{ 800,600 }).minComponent();
+			//Vec2 tl = (Vec2{ Scene::Width(),Scene::Height() } - Vec2{ 800,600 } * scale) / 2;
 
-			Transformer2D tf{ Mat3x2::Scale(scale).translated(tl)};
+			//Transformer2D tf{ Mat3x2::Scale(scale).translated(tl)};
 
 			constexpr Vec2 center = Vec2{ 400,300 };
 
@@ -62,7 +62,7 @@ public:
 				if (chatIndex == chats.size() - 1)timeAterChatEnd += delta;
 				for (size_t i = 0; i <= chatIndex; i++) {
 					auto da = font(chats[i].string);
-					double chat_y = 500 - 100 - (chatIndex - i) * 100;
+					double chat_y = 500 - (chatIndex - i) * 100;
 					if (chats[i].isSister) {
 						RectF rect{ Arg::rightCenter(630,chat_y),da.region().size };
 						RoundRect{ RectF{Arg::center(rect.center()),rect.w + 40,rect.h + 10},20 }.draw(Palette::Darkblue);
