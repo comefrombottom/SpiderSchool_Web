@@ -1,193 +1,198 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="viewport-fit=cover, width=device-width, user-scalable=no">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
     <title>OpenSiv3D for Web</title>
     <style>
-      body {
-        font-family: arial;
-        overflow: hidden;
-        margin: 0px;
-        padding-top: env(safe-area-inset-top, 0px);
-        padding-left: env(safe-area-inset-left, 0px);
-        background-color: gray;
-        -ms-touch-action: none;
-        touch-action: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        -webkit-user-select: none;
-        user-select: none;
-      }
+        body {
+            font-family: arial;
+            overflow: hidden;
+            margin: 0px;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            background-color: gray;
+            -ms-touch-action: none;
+            touch-action: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
 
-      div.dummy {
-        position: fixed;
-        width: 100vw;
-        height: 100vh;
-      }
+        div.dummy {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+        }
 
-      #app {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        background-color: gray;
-      }
+        #app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: gray;
+        }
 
-      #app-container {
-        display: flex;
-        flex-flow: column;
-        width: 100%;
-        height: 100%;
-      }
-
-      #canvas-container {
-        flex: auto;
-      }
-
-      @media screen and (orientation: landscape) and (max-height: 480px) {
         #app-container {
-          flex-flow: row;
+            display: flex;
+            flex-flow: column;
+            width: 100%;
+            height: 100%;
         }
 
         #canvas-container {
-          min-width: 0px;
-        }
-      }
-
-      @media screen and (min-height: 480px) {
-        #app-container {
-          flex-flow: column;
+            flex: auto;
         }
 
-        #canvas-container {
-          min-height: 0px;
+        @media screen and (orientation: landscape) and (max-height: 480px) {
+            #app-container {
+                flex-flow: row;
+            }
+
+            #canvas-container {
+                min-width: 0px;
+            }
         }
-      }
 
-      canvas.emscripten {
-        border: 0px none;
-        background-color: gray;
-        width: 100%;
-        height: 100%;
-      }
+        @media screen and (min-height: 480px) {
+            #app-container {
+                flex-flow: column;
+            }
 
-      #progress-frame {
-        position: absolute;
-        z-index: 10;
-        left: 0px; top: 0px; right: 0px;
-        border: 1px solid rgb(120, 120, 120);
-        background-color: rgb(60, 60, 60);
-      }
+            #canvas-container {
+                min-height: 0px;
+            }
+        }
 
-      #progress {
-        height: 10px;
-      }
+        canvas.emscripten {
+            border: 0px none;
+            background-color: gray;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
 
-      div.progress-ok {
-        background-color: rgb(189, 215, 46);
-      }
+        #progress-frame {
+            position: absolute;
+            z-index: 10;
+            left: 0px;
+            top: 0px;
+            right: 0px;
+            border: 1px solid rgb(120, 120, 120);
+            background-color: rgb(60, 60, 60);
+        }
 
-      div.progress-error {
-        background-color: rgb(215, 66, 46);
-      }
+        #progress {
+            height: 10px;
+        }
 
-      #footer-control {
-        z-index: 15;
-        flex: 0 0 1.2cm;
-        background-color: rgb(60, 60, 60);
-    
-        display: flex;
-        justify-content: flex-end; 
-        align-items: center;
-      }
+        div.progress-ok {
+            background-color: rgb(189, 215, 46);
+        }
 
-      @media screen and (orientation: landscape) and (max-height: 480px) {
-        body {
-          padding-bottom: env(safe-area-inset-bottom, 0px);
+        div.progress-error {
+            background-color: rgb(215, 66, 46);
         }
 
         #footer-control {
-          flex-flow: column;
-          padding-right: env(safe-area-inset-right, 0px);
-        }
-      }
-
-      @media screen and (min-height: 480px) {
-        body {
-          padding-right: env(safe-area-inset-right, 0px);
+            z-index: 15;
+            flex: 0 0 1.2cm;
+            background-color: rgb(60, 60, 60);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
         }
 
-        #footer-control {
-          flex-flow: row;
-          padding-bottom: env(safe-area-inset-bottom, 0px);
+        @media screen and (orientation: landscape) and (max-height: 480px) {
+            body {
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+
+            #footer-control {
+                flex-flow: column;
+                padding-right: env(safe-area-inset-right, 0px);
+            }
         }
-      }
 
-      .footer-button {
-        width: 1cm;
-        height: 1cm;
-      }
+        @media screen and (min-height: 480px) {
+            body {
+                padding-right: env(safe-area-inset-right, 0px);
+            }
 
-      .footer-button::after {
-        width: 0.3cm;
-        height: 1cm;
-      }
+            #footer-control {
+                flex-flow: row;
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+        }
 
-      .st0 {
-        fill:#CBCBCB;
-      }
+        .footer-button {
+            width: 1cm;
+            height: 1cm;
+        }
 
-      .st0:hover {
-        fill:#FBFBFB;
-      }
+            .footer-button::after {
+                width: 0.3cm;
+                height: 1cm;
+            }
 
-      .st1 {
-        fill:#CBCBCB;
-        transition: all 0.2s ease-out;
-      }
+        .st0 {
+            fill: #CBCBCB;
+        }
 
-      .st1:hover {
-        fill:#FBFBFB;
-      }
+            .st0:hover {
+                fill: #FBFBFB;
+            }
 
-      .playground-overlay {
-        position: absolute;
-        left: 0px;
-        top: 0px;
-        width: 100%;
-        height: 100%;
+        .st1 {
+            fill: #CBCBCB;
+            transition: all 0.2s ease-out;
+        }
 
-        color: white;
-        background: rgba(0, 0, 0, 0.5);
-        transition: color 0.2s ease-out;
+            .st1:hover {
+                fill: #FBFBFB;
+            }
 
-        font-size: large;
-      }
+        .playground-overlay {
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            width: 100%;
+            height: 100%;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            transition: color 0.2s ease-out;
+            font-size: large;
+        }
 
-      .playground-overlay:hover {
-        border-color: white;
-      }
+            .playground-overlay:hover {
+                border-color: white;
+            }
 
-      .play-button, .reload-button {
-        margin-left: auto;
-        margin-right: auto;
-        width: 3cm;
-        height: 3cm;
-      }
+        .play-button, .reload-button {
+            margin-left: auto;
+            margin-right: auto;
+            width: 3cm;
+            height: 3cm;
+        }
 
-      .button-container {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translateY(-50%) translateX(-50%);
-      }
+        .button-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translateY(-50%) translateX(-50%);
+        }
 
-      .error-text {
-        margin-top: 1em;
-      }
+        .error-text {
+            margin-top: 1em;
+        }
     </style>
-  </head>
+</head>
   <body>
     <div id="app">
       <div class="playground-overlay" hidden="true">
@@ -294,7 +299,8 @@
           canvasContainerElement.requestFullscreen || 
           canvasContainerElement.webkitRequestFullscreen ||
           function() {
-            alert("Fullscreen is not supported on iOS")
+            alert("Fullscreen is not supported on iOS");
+            Options["getCurrentAudioContext"]().resume();
           };
         fullscreenFunction.call(canvasContainerElement);
       }
