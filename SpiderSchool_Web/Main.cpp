@@ -367,12 +367,12 @@ void Main()
 					LRControlValue = Clamp(LRControlValue, -LRControlLimit, LRControlLimit);
 
 					double x = touchOpt->pos.x;
-					delayX += (x - delayX) * 10 * Scene::DeltaTime();
+					delayX += (x - delayX) * 5 * Scene::DeltaTime();
 
-					if (x - delayX > 50) {
+					if (x - delayX > 20) {
 						rightSwiped = true;
 					}
-					else if (x - delayX < -50) {
+					else if (x - delayX < -20) {
 						leftSwiped = true;
 					}
 
@@ -382,7 +382,6 @@ void Main()
 					LRControlValue = 0;
 				}
 			}
-
 
 			bool rightPressed = (LRControlValue > 20);
 			bool leftPressed = (LRControlValue < -20);
